@@ -1,30 +1,23 @@
 package com.github.kreativshikkk.taskmanagerplugin.toolWindow
 
+import com.github.kreativshikkk.taskmanagerplugin.MyBundle
+import com.github.kreativshikkk.taskmanagerplugin.graphicObjects.DeadlineField
+import com.github.kreativshikkk.taskmanagerplugin.graphicObjects.DescriptionField
+import com.github.kreativshikkk.taskmanagerplugin.graphicObjects.PriorityField
 import com.intellij.ide.ui.LafManager
 import com.intellij.openapi.util.IconLoader
+import com.intellij.ui.components.JBScrollPane
 import java.awt.*
 import java.awt.event.ActionEvent
-import java.awt.event.FocusAdapter
-import java.awt.event.FocusEvent
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatterBuilder
-import java.time.format.DateTimeParseException
-import java.time.format.ResolverStyle
-import java.util.regex.Pattern
 import javax.swing.*
-import javax.swing.text.AttributeSet
-import javax.swing.text.PlainDocument
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
 
-class NumberOnlyDocument : PlainDocument() {
-    override fun insertString(offs: Int, str: String?, a: AttributeSet?) {
-        if (str == null) return
-        if (str.all { it.isDigit() } || str == "Set priority...") {
-            super.insertString(offs, str, a)
-        }
-    }
-}
-
-class TaskPanel(description: String) : JPanel() {
+class TaskPanel(
+    description: String,
+    private val taskListPanel: JPanel,
+    private val myToolWindow: MyToolWindowFactory.MyToolWindow
+) : JPanel() {
     private val checkBox: JCheckBox
     private val descriptionField: JTextArea
     private val priorityField: JTextField
@@ -34,121 +27,69 @@ class TaskPanel(description: String) : JPanel() {
     private val deadlineField: JTextField
     private val deleteButton: JButton
 
-    fun getPriorityField(): JTextField {
-        return priorityField
-    }
-
-    fun getDeadlineField(): JTextField {
-        return deadlineField
-    }
-
     init {
-
-        if  (LafManager.getInstance().currentUIThemeLookAndFeel.isDark){
-            inactiveColor = Color(80, 80, 80)
-            activeColor = Color(255, 255, 255)
+        if (LafManager.getInstance().currentUIThemeLookAndFeel.isDark) {
+            inactiveColor = Color.decode(MyBundle.message("color.dark.inactive"))
+            activeColor = Color.decode(MyBundle.message("color.dark.active"))
             deleteIcon = IconLoader.getIcon("/icons/dark/delete.svg", javaClass)
         } else {
-            inactiveColor = Color(60, 60, 60)
-            activeColor = Color(0, 0, 0)
+            inactiveColor = Color.decode(MyBundle.message("color.light.inactive"))
+            activeColor = Color.decode(MyBundle.message("color.light.active"))
             deleteIcon = IconLoader.getIcon("/icons/light/delete.svg", javaClass)
         }
 
         layout = BorderLayout()
-        border = BorderFactory.createEmptyBorder() // Удаление рамки
+        border = BorderFactory.createEmptyBorder()
+
+        descriptionField = DescriptionField(description).descriptionField
+        priorityField = PriorityField().priorityField
+        deadlineField = DeadlineField().deadlineField
+
+        descriptionField.document.addDocumentListener(object : DocumentListener {
+            override fun insertUpdate(e: DocumentEvent?) = saveTasks()
+            override fun removeUpdate(e: DocumentEvent?) = saveTasks()
+            override fun changedUpdate(e: DocumentEvent?) = saveTasks()
+        })
+        deadlineField.document.addDocumentListener(object : DocumentListener {
+            override fun insertUpdate(e: DocumentEvent?) = saveTasks()
+            override fun removeUpdate(e: DocumentEvent?) = saveTasks()
+            override fun changedUpdate(e: DocumentEvent?) = saveTasks()
+        })
+
+        priorityField.document.addDocumentListener(object : DocumentListener {
+            override fun insertUpdate(e: DocumentEvent?) = saveTasks()
+            override fun removeUpdate(e: DocumentEvent?) = saveTasks()
+            override fun changedUpdate(e: DocumentEvent?) = saveTasks()
+        })
 
         checkBox = JCheckBox()
-        checkBox.addActionListener { e: ActionEvent? -> updateCompletion() }
+        checkBox.addActionListener { _: ActionEvent? -> updateCompletion(); saveTasks() }
+
+        deleteButton = JButton(deleteIcon)
+        deleteButton.preferredSize = Dimension(32, 32)
+        deleteButton.maximumSize = Dimension(32, 32)
+        deleteButton.addActionListener { _: ActionEvent? -> removeTask(); saveTasks() }
+
         val checkBoxContainer = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
             add(checkBox)
         }
-        add(checkBoxContainer, BorderLayout.WEST)
 
-        descriptionField = JTextArea(description, 5, 1)
-        descriptionField.maximumSize = Dimension(Int.MAX_VALUE, 110)
-        descriptionField.lineWrap = true
-        descriptionField.wrapStyleWord = true
-        descriptionField.border = BorderFactory.createEmptyBorder() // Удаление рамки у поля описания
-        descriptionField.font = Font("Arial", Font.PLAIN, 14)
-        if (description.isEmpty()) {
-            descriptionField.text = "Write task description..."
-            descriptionField.foreground = inactiveColor
+        val buttonContainer = JPanel(FlowLayout(FlowLayout.RIGHT, 0, 0)).apply {
+            add(deleteButton)
         }
-        descriptionField.addFocusListener(object : FocusAdapter() {
-            override fun focusGained(e: FocusEvent) {
-                if (descriptionField.text == "Write task description...") {
-                    descriptionField.text = ""
-                    descriptionField.foreground = activeColor
-                }
-            }
-
-            override fun focusLost(e: FocusEvent) {
-                if (descriptionField.text.isEmpty()) {
-                    descriptionField.text = "Write task description..."
-                    descriptionField.foreground = inactiveColor
-                }
-            }
-        })
-
-        priorityField = JTextField(10).apply {
-            border = BorderFactory.createEmptyBorder()
-            document = NumberOnlyDocument()
-            document.insertString(0, "Set priority...", null)
-            foreground = inactiveColor
-        }
-
-        priorityField.addFocusListener(object : FocusAdapter() {
-            override fun focusGained(e: FocusEvent) {
-                if (priorityField.text == "Set priority...") {
-                    priorityField.text = ""
-                    priorityField.foreground = activeColor
-                }
-            }
-
-            override fun focusLost(e: FocusEvent) {
-                if (priorityField.text.isEmpty()) {
-                    priorityField.text = "Set priority..."
-                    priorityField.foreground = inactiveColor
-                }
-            }
-        })
 
         val priorityPanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
-            add(JLabel("Priority:"))
+            add(JLabel(MyBundle.message("priority.field.label")))
             add(priorityField)
         }
 
-        deadlineField = JTextField(20).apply {
-            border = BorderFactory.createEmptyBorder()
-            text = "YYYY-MM-DD hh:mm:ss"
-            foreground = inactiveColor
-
-            addFocusListener(object : FocusAdapter() {
-                override fun focusGained(e: FocusEvent) {
-                    if (text == "YYYY-MM-DD hh:mm:ss") {
-                        text = ""
-                        foreground = activeColor
-                    }
-                }
-
-                override fun focusLost(e: FocusEvent) {
-                    if (text.isEmpty()) {
-                        text = "YYYY-MM-DD hh:mm:ss"
-                        foreground = inactiveColor
-                    } else {
-                        validateDateTime()
-                    }
-                }
-            })
-        }
-
-        val descriptionScrollPane = JScrollPane(descriptionField)
-        descriptionScrollPane.border = BorderFactory.createEmptyBorder()
-
-        val deadlinePanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply{
-            add(JLabel("Deadline:"))
+        val deadlinePanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
+            add(JLabel(MyBundle.message("deadline.field.label")))
             add(deadlineField)
         }
+
+        val descriptionScrollPane = JBScrollPane(descriptionField)
+        descriptionScrollPane.border = BorderFactory.createEmptyBorder()
 
         val textContainer = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -158,54 +99,33 @@ class TaskPanel(description: String) : JPanel() {
         }
 
         add(textContainer, BorderLayout.CENTER)
-
-        deleteButton = JButton(deleteIcon)
-        deleteButton.preferredSize = Dimension(32, 32)
-        deleteButton.maximumSize = Dimension(32, 32)
-        deleteButton.addActionListener { e: ActionEvent? -> removeTask() }
-
-        val buttonContainer = JPanel(FlowLayout(FlowLayout.RIGHT, 0, 0)).apply {
-            add(deleteButton)
-        }
         add(buttonContainer, BorderLayout.EAST)
+        add(checkBoxContainer, BorderLayout.WEST)
     }
 
-
-    private fun validateDateTime() {
-        val datePattern = "uuuu-MM-dd HH:mm:ss"
-        val formatter = DateTimeFormatterBuilder()
-            .appendPattern(datePattern)
-            .toFormatter()
-            .withResolverStyle(ResolverStyle.STRICT)  // Установка строгого режима проверки
-
-        val matcher = Pattern.compile("^\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}$").matcher(deadlineField.text)
-
-        if (!matcher.matches()) {
-            showError("Invalid format. Please follow: YYYY-MM-DD hh:mm:ss")
-            return
-        }
-
-        try {
-            val dateTime = LocalDateTime.parse(deadlineField.text, formatter)
-
-            if (dateTime.isBefore(LocalDateTime.now())) {
-                showError("Date and time must be in the future.")
-                return
-            }
-            deadlineField.foreground = activeColor
-        } catch (e: DateTimeParseException) {
-            showError("Failed to parse date and time. Please enter a valid date and time.")
-        }
+    fun getPriorityField(): JTextField {
+        return priorityField
     }
 
-    private fun showError(message: String) {
-        JOptionPane.showMessageDialog(null, message, "Format Error", JOptionPane.ERROR_MESSAGE)
-        deadlineField.foreground = Color.RED
+    fun getDeadlineField(): JTextField {
+        return deadlineField
+    }
+
+    fun getDescriptionField(): JTextArea {
+        return descriptionField
+    }
+
+    fun getCheckBox(): JCheckBox {
+        return checkBox
+    }
+
+    private fun saveTasks() {
+        myToolWindow.saveTasks(taskListPanel)
     }
 
     override fun addNotify() {
         super.addNotify()
-        preferredSize = Dimension(parent.width, descriptionField.preferredSize.height + 10)
+        preferredSize = Dimension(parent.width, descriptionField.maximumSize.height + 10)
         maximumSize = Dimension(Int.MAX_VALUE, descriptionField.maximumSize.height + 10)
     }
 

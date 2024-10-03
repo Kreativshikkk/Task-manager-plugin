@@ -1,7 +1,6 @@
-<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
     <id>com.github.kreativshikkk.taskmanagerplugin</id>
-    <name>Task Manager Plugin</name>
+    <name>Task Manager</name>
     <vendor>Nikita Magomedeminov</vendor>
 
     <depends>com.intellij.modules.platform</depends>
@@ -12,7 +11,11 @@
         <toolWindow factoryClass="com.github.kreativshikkk.taskmanagerplugin.toolWindow.MyToolWindowFactory" id="Task Manager"/>
     </extensions>
 
-    <applicationListeners>
-        <listener class="com.github.kreativshikkk.taskmanagerplugin.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
-    </applicationListeners>
+    <description>
+        Task Manager is a plugin for IntelliJ IDEA that helps developers manage their tasks directly within the IDE. The plugin provides a convenient interface for adding, sorting, and tracking tasks with priority and deadlines.
+    </description>
+
+    <change-notes>
+        Initial release of Task Manager plugin.
+    </change-notes>
 </idea-plugin>
