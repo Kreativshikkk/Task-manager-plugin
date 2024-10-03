@@ -18,21 +18,24 @@ import javax.swing.JTextField
 class DeadlineField {
     private val inactiveColor: Color
     private val activeColor: Color
+    private val backgroundColor: Color
 
     init {
         if (LafManager.getInstance().currentUIThemeLookAndFeel.isDark) {
             inactiveColor = Color.decode(MyBundle.message("color.dark.inactive"))
             activeColor = Color.decode(MyBundle.message("color.dark.active"))
+            backgroundColor = Color.decode(MyBundle.message("color.dark.background"))
         } else {
             inactiveColor = Color.decode(MyBundle.message("color.light.inactive"))
             activeColor = Color.decode(MyBundle.message("color.light.active"))
+            backgroundColor = Color.decode(MyBundle.message("color.light.background"))
         }
     }
     internal val deadlineField = JTextField(20).apply {
         border = BorderFactory.createEmptyBorder()
         text = MyBundle.message("deadline.field.default.text")
         foreground = inactiveColor
-        background = Color.decode(MyBundle.message("color.light.background"))
+        background = backgroundColor
 
         addFocusListener(object : FocusAdapter() {
             override fun focusGained(e: FocusEvent) {
