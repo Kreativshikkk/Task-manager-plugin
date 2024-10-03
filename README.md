@@ -42,7 +42,6 @@ Task Manager is a plugin for IntelliJ IDEA that helps developers manage their ta
 ## Requirements
 
 - IntelliJ IDEA 2024.2.2 or higher
-- Kotlin and Java support
 
 ## Author
 
