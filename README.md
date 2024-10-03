@@ -2,6 +2,11 @@
 
 Task Manager is a plugin for IntelliJ IDEA that helps developers manage their tasks directly within the IDE. The plugin provides a convenient interface for adding, sorting, and tracking tasks with priority and deadlines.
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/3f948ccc-1cb5-4f99-baed-994c3b36595e" alt="plugin_demo">
+</p>
+
+
 ## Features
 
 - **Add Tasks**: Easily add new tasks with descriptions, priorities, and deadlines.
