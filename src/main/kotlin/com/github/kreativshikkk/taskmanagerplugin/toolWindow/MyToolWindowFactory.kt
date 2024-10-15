@@ -39,9 +39,9 @@ class MyToolWindowFactory : ToolWindowFactory {
     class MyToolWindow(private val project: Project) {
         private val inactiveColor: String
         private val activeColor: String
-        private var addButton: JButton
-        private var sortByDeadlineButton: JButton
-        private var sortByPriorityButton: JButton
+        private val addButton: JButton
+        private val sortByDeadlineButton: JButton
+        private val sortByPriorityButton: JButton
 
         init {
             if (LafManager.getInstance().currentUIThemeLookAndFeel.isDark) {
